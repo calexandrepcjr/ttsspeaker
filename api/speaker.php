@@ -1,9 +1,8 @@
 <?php
     include_once('speaker.class.php');
-$speaker = new Speaker($_REQUEST, 'espeak');
+    $speaker = new Speaker($_REQUEST);
     switch($speaker->getAction()){
         case 'speak':
-            $speaker->getText();
             $speaker->getSpeak();
             break;
     }
