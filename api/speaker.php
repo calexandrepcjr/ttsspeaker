@@ -5,4 +5,7 @@
         case 'speak':
             $speaker->getSpeak();
             break;
+        case 'shutup!':
+            $speaker->removeSpeak();
+            break;
     }

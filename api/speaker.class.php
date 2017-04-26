@@ -17,7 +17,7 @@ class Speaker {
              $this->technology = (isset($requestParameters->technology) && $requestParameters->technology != '') ? $requestParameters->technology : 'lianetts';
              $this->text = $requestParameters->text;
              $this->action = $requestParameters->action;
-             $this->uid = $request['uid'];
+             $this->uid = (isset($requestParameters->uid)) ? $requestParameters->uid : $request['uid'];
 
              if (!$this->isTechnologyAvailable())
                  exit("This technology isn't available in this server");
@@ -28,6 +28,17 @@ class Speaker {
     private function array_filter_key(array $array, $callback) {
         $matchedKeys = array_filter(array_keys($array), $callback);
         return array_intersect_key($array, array_flip($matchedKeys));
+    }
+
+    private function delAudioFile() {
+        if ($this->uid != null){
+            $file = self::PATH . $this->uid . '.wav';
+            exec("rm -f " . $file);
+            if (!file_exists($file))
+                echo json_encode(1);
+            else
+                echo json_encode(0);
+        }
     }
 
      private function isAjax() {
@@ -70,7 +81,11 @@ class Speaker {
         exec(str_replace('%address%', self::PATH . "{$this->uid}.wav '{$this->text}'",$currentTech['verbosis']));
         
         if (file_exists(self::PATH . "{$this->uid}.wav")){
-            echo json_encode(self::LINKPATH . "{$this->uid}.wav");
+            echo json_encode(array('address' => self::LINKPATH . "{$this->uid}.wav", 'uid' => $this->uid));
         }
+    }
+
+    public function removeSpeak(){
+        $this->delAudioFile();
     }
 }

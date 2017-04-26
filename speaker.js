@@ -1,6 +1,3 @@
-//AJAX by JS
-//Author: https://www.quirksmode.org/js/xmlhttp.html
-
 function Speaker() {
     var imported = document.createElement('script');
     imported.src = 'assets/js/jx-3.01a.min.js';
@@ -12,8 +9,25 @@ Speaker.prototype.audioPlay = function(data){
     audio.crossOrigin = 'anonymous';
     if (data.repeat && data.repeat > 0) {
 	audio.addEventListener('ended', function() {
-	    this.currentTime = 0;
-	    this.play();
+	    if (data.repeat > 0){
+		setTimeout(function(){
+		    audio.currentTime = 0;
+		    audio.play();
+		    data.repeat--;
+		}, data.interval);
+	    } else {
+		this.pause();
+		parameters = {
+		    action: 'shutup!',
+		    uid: data.uid
+		};
+		jx.load('api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(parameters)), function(response){
+		    if (response == 1)
+			console.log('Audio ended');
+		    else
+			console.log('Audio remotion routine broked!');
+		}, 'json');
+	    }
 	});
     }
     
@@ -21,10 +35,12 @@ Speaker.prototype.audioPlay = function(data){
 }
 
 Speaker.prototype.speak = function(data){
-    jx.load('api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(data)), function(response){
+    jx.load('api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(data.parameters)), function(response){
 	playData = {
-	    audioAddress: response,
-	    repeat: 3
+	    audioAddress: response.address,
+	    repeat: data.repeat,
+	    interval: data.interval,
+	    uid: response.uid
 	}; 
 	Speaker.prototype.audioPlay.call(this, playData);
     }, 'json');

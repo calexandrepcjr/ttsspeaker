@@ -42,9 +42,13 @@
  
  entryData.addEventListener('change', function(){
      data = {
-         text: this.value,
-         technology: document.querySelector('[name=technology]').value,
-         action: 'speak'
+         parameters: {
+             text: this.value,
+             technology: document.querySelector('[name=technology]').value,
+             action: 'speak'
+         },         
+         repeat: 2, //How many plays do you want (loop)
+         interval: 2000 //ms interval between plays
      };
      speaker.speak(data);
  });
