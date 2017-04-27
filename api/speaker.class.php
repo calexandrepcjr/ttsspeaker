@@ -8,13 +8,23 @@ class Speaker {
     const LINKPATH = 'mediapool/';
     private $availableTechs = array(
         'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-        'espeak' => array('verbosis' => 'espeak -v mb-br4 -s 100 -w %address%')
+        'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
     );
     
      function __construct($request = false){
          if ($request){
              $requestParameters = json_decode($request['parameters']);
-             $this->technology = (isset($requestParameters->technology) && $requestParameters->technology != '') ? $requestParameters->technology : 'lianetts';
+             $this->technology = array( 'name' => (isset($requestParameters->technology->name) && $requestParameters->technology->name != '') ? $requestParameters->technology->name : 'lianetts'
+             );
+             switch($requestParameters->technology->name){
+                 case 'espeak':
+                     if ($requestParameters->technology->lang != '') {
+                         $this->technology['lang'] = $requestParameters->technology->lang;
+                     } else {
+                         $this->technology['lang'] = 'mb-br4';
+                     }
+                     break;
+             }
              $this->text = $requestParameters->text;
              $this->action = $requestParameters->action;
              $this->uid = (isset($requestParameters->uid)) ? $requestParameters->uid : $request['uid'];
@@ -31,13 +41,15 @@ class Speaker {
     }
 
     private function delAudioFile() {
-        if ($this->uid != null){
+        if ($this->uid != null && is_numeric($this->uid)){
             $file = self::PATH . $this->uid . '.wav';
             exec("rm -f " . $file);
             if (!file_exists($file))
                 echo json_encode(1);
             else
                 echo json_encode(0);
+        } else {
+            echo json_encode(0);
         }
     }
 
@@ -50,7 +62,7 @@ class Speaker {
      }
 
      private function isTechnologyAvailable($tech = false) {
-         $tech = (!$tech) ? $this->technology : $tech;
+         $tech = (!$tech) ? $this->technology['name'] : $tech;
          $techStatus = shell_exec("which $tech");
          return !empty($techStatus);
      }
@@ -77,11 +89,16 @@ class Speaker {
     }
     
     public function getSpeak(){
-        $currentTech = $this->getAvailableTechs($this->technology);
-        exec(str_replace('%address%', self::PATH . "{$this->uid}.wav '{$this->text}'",$currentTech['verbosis']));
+        $currentTech = $this->getAvailableTechs($this->technology['name']);
+        if ($this->technology['lang'] != '' && $this->technology['name'] == 'espeak'){
+            $currentTech['verbosis'] = str_replace('%lang%', $this->technology['lang'], $currentTech['verbosis']);
+        }
+        $return = shell_exec(str_replace('%address%', self::PATH . "{$this->uid}.wav '{$this->text}'", $currentTech['verbosis']));
         
         if (file_exists(self::PATH . "{$this->uid}.wav")){
             echo json_encode(array('address' => self::LINKPATH . "{$this->uid}.wav", 'uid' => $this->uid));
+        } else {
+            echo json_encode($return);
         }
     }
 

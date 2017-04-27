@@ -20,7 +20,7 @@
 	</style>
     </head>
     <body>
-	<h2>MEDVOICE EXAMPLE</h2>
+	<h2>EXAMPLE</h2>
 	<p>
 	    <?php
 	    $speaker = new Speaker();
@@ -29,27 +29,27 @@
 	    foreach($availableTechs as $key => $tech){
 		echo "<option value='{$key}'>{$key}</option>";
 	    }
-	    echo '</select>';
-	    ?>
-	    <input type="text" name="text-to-speak" value="" placeholder='Insert any text here' autofocus>
-	</p>
-  </body>
-</html>
-<script src="speaker.js"></script>
-<script>
- var entryData = document.querySelector('[name=text-to-speak]');
- var speaker = new Speaker();
- 
- entryData.addEventListener('change', function(){
-     data = {
-         parameters: {
-             text: this.value,
-             technology: document.querySelector('[name=technology]').value,
-             action: 'speak'
-         },         
-         repeat: 2, //How many plays do you want (loop)
-         interval: 2000 //ms interval between plays
-     };
-     speaker.speak(data);
- });
+         echo '</select>';
+         ?>
+         <input type="text" name="text-to-speak" value="" placeholder='Insert any text here' autofocus>
+     </p>
+   </body>
+ </html>
+ <script src="speaker.js"></script>
+ <script>
+ /*
+ target = Object or String;
+ technology = String with the name of existing techs. You can use the PHP API to retrieve the compatible ones (optional - default lianetts) ;
+ binder = You can load other listener types (optional -  - if String will automatically load the audio when the window load, objects will load with change listener attached);
+ repeat = How many times do you want play the audio (optional - default 0);
+ interval = Interval between the audio loop (default - in ms - 2000ms)
+  */
+    var parameters = {
+     target: document.querySelector('[name=text-to-speak]'),
+     technology: {
+            name: document.querySelector('[name=technology]'),
+            lang: 'us'
+        }
+    };
+    var speaker = new Speaker(parameters);
 </script>
