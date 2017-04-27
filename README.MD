@@ -12,4 +12,4 @@ I'll need to install one of two supported technologies, create the mediapool pat
 - [ ] Stronger manipulation of TTS technologies (pitch, volume, etc)
 - [ ] Wider TTS options
 - [X] Wider Languages options
-- [ ] List available languages with espeak is installed
+- [ ] List available languages when espeak is available
