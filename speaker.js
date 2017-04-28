@@ -19,12 +19,12 @@ function Speaker(parameters) {
 	    console.log('Invalid target');
 	    return false;
 	}
-	switch (typeof parameters.technology.name){
+	switch (typeof parameters.tts.name){
 	    case 'object':
-		tech = parameters.technology.name.value;
+		tech = parameters.tts.name.value;
 		break;
 	    case 'string':
-		tech = parameters.technology.name;
+		tech = parameters.tts.name;
 		break;
 	    case 'undefined':
 		tech = '';
@@ -32,9 +32,9 @@ function Speaker(parameters) {
 	 data = {
 	     parameters: {
 		 text: (this.binder == 'load') ? parameters.target : this.value,
-		technology: {
+		tts: {
 		    name: tech,
-		    lang: (typeof parameters.technology.lang != 'undefined') ? parameters.technology.lang : ''
+		    lang: (typeof parameters.tts.lang != 'undefined') ? parameters.tts.lang : ''
 		}
 	    },         
 	     repeat: (typeof parameters.repeat == 'undefined') ? 0 : parameters.repeat, //How many plays do you want (loop)
@@ -84,10 +84,13 @@ Speaker.prototype.speak = function(data){
 	    }; 
 	    Speaker.prototype.audioPlay(playData);
 	} else {
-	    if (data.parameters.technology.lang == '')
+	    if (data.parameters.tts.lang == ''){
 		console.log("API Error: Can't make the audio");
-	    else
+		return false;
+	    } else {
 		console.log("API Error: Inexistent language");
+		return false;
+	    }
 	}
     }, 'json');
 }

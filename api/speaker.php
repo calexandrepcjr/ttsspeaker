@@ -1,5 +1,5 @@
 <?php
-    include_once('speaker.class.php');
+    include_once('Speaker.class.php');
     $speaker = new Speaker($_REQUEST);
     switch($speaker->getAction()){
         case 'speak':
