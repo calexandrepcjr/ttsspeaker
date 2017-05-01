@@ -1,4 +1,5 @@
 function Speaker(parameters) {
+    sessionStorage.clear();
     var imported = document.createElement('script');
     //http://www.openjs.com/scripts/jx/
     imported.src = 'assets/js/jx-3.01a.min.js';
@@ -6,8 +7,12 @@ function Speaker(parameters) {
 
     if (typeof parameters == 'object'){
 	this.binder = (typeof parameters.binder == 'undefined') ? 'load' : parameters.binder;
+	if (typeof parameters.secondaryTarget == 'object') {
+	    this.target = parameters.secondaryTarget;
+	}
+	
 	if (typeof parameters.target == 'object') {
-	    this.target = parameters.target;
+	    
 	    this.binder = (this.binder == 'load') ? 'change' : this.binder;
 	} else {
 	    this.target = window;
@@ -31,7 +36,7 @@ function Speaker(parameters) {
 	}
 	 data = {
 	     parameters: {
-		 text: (this.binder == 'load') ? parameters.target : this.value,
+		 text: (this.binder == 'load') ? parameters.target : parameters.target.value,
 		tts: {
 		    name: tech,
 		    lang: (typeof parameters.tts.lang != 'undefined') ? parameters.tts.lang : ''
@@ -39,8 +44,11 @@ function Speaker(parameters) {
 	    },         
 	     repeat: (typeof parameters.repeat == 'undefined') ? 0 : parameters.repeat, //How many plays do you want (loop)
 	     interval: (typeof parameters.interval == 'undefined') ? 2000 : parameters.interval //ms interval between plays
-	};
-	Speaker.prototype.speak(data);
+	 };
+	if (!sessionStorage.getItem('audioSession'))
+	    Speaker.prototype.speak(data);
+	else
+	    console.log('Your audio session does not finished yet!');
     });
 }
 
@@ -61,22 +69,28 @@ Speaker.prototype.audioPlay = function(data){
 		uid: data.uid
 	    };
 	    jx.load('api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(parameters)), function(response){
-		if (response == 1)
+		if (response == 1) {
+		    sessionStorage.clear();
 		    console.log('Audio ended');
-		else
+		} else {
 		    console.log('Audio remotion routine broked!');
+		}
 	    }, 'json');
 	}
     });
+
+    if (!sessionStorage.getItem('audioSession')) {
+	audio.play();
+	sessionStorage.setItem('audioSession', false);
+    }
     
-    audio.play();
 }
 
 Speaker.prototype.speak = function(data){
     data.parameters.action = 'speak';
     jx.load('api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(data.parameters)), function(response){
 	if (response != null){
-	   playData = {
+	    playData = {
 		audioAddress: response.address,
 		repeat: data.repeat,
 		interval: data.interval,

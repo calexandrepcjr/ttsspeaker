@@ -32,13 +32,15 @@
          echo '</select>';
          ?>
          <input type="text" name="text-to-speak" value="" placeholder='Insert any text here' autofocus>
+         <button name='speak' type='button'>Speak!</button>
      </p>
    </body>
  </html>
  <script src="speaker.js"></script>
  <script>
  /*
- target = Object or String;
+ target = Object or String (The text-to-speech always will come from this object);
+ secondaryTarget = Object or String (a seconde reference to trigger the event, like a button);
  tts = String with the name of existing techs. You can use the PHP API to retrieve the compatible ones (optional - default lianetts) ;
  binder = You can load other listener types (optional -  - if String will automatically load the audio when the window load, objects will load with change listener attached);
  repeat = How many times do you want play the audio (optional - default 0);
@@ -46,6 +48,9 @@
   */
     var parameters = {
      target: document.querySelector('[name=text-to-speak]'),
+     secondaryTarget: document.querySelector('[name=speak]'),
+     binder: 'click',
+     repeat: 3,
      tts: {
             name: document.querySelector('[name=tts]')
         }
