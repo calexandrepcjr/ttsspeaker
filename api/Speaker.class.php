@@ -3,7 +3,6 @@ include_once('TTS.class.php');
 class Speaker {
     private $action;
     private $tts;
-    private $currentTTS;
     private $uid;
     const PATH = '../mediapool/';
     const LINKPATH = 'mediapool/';
@@ -18,8 +17,7 @@ class Speaker {
                  $this->tts = new TTS();
                  $this->tts->setUID($this->uid);
                  $this->tts->setPath(array('path' => self::PATH, 'link' => self::LINKPATH));
-                 $this->tts->set($requestParameters);
-                 $this->currentTTS = $this->tts->get();
+                 $this->tts->createTTS($requestParameters);
              }
          }
      }
@@ -53,7 +51,8 @@ class Speaker {
      }
     
     public function getSpeak(){
-        $return = shell_exec($this->currentTTS['verbosis']);
+        $currentTTS = $this->tts->get();
+        $return = shell_exec($currentTTS['verbosis']);
 
         if (file_exists(self::PATH . "{$this->uid}.wav")){
             echo json_encode(array('address' => self::LINKPATH . "{$this->uid}.wav", 'uid' => $this->uid));

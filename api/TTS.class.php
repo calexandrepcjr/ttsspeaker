@@ -1,13 +1,11 @@
 <?php
 class TTS {
     private $tts;
-    private $availableTTS = array(
-        'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-        'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
-    );
+    private $technologies;
     private $uploadPath;
     private $uid;
     function __construct(){
+        $this->loadTechs();
     }
     
     /*Can't use full property of array_filter below 5.6 version ;-;
@@ -17,6 +15,11 @@ class TTS {
     private function array_filter_key(array $array, $callback) {
         $matchedKeys = array_filter(array_keys($array), $callback);
         return array_intersect_key($array, array_flip($matchedKeys));
+    }
+    
+    // Author Wes Foster http://php.net/manual/pt_BR/function.str-replace.php#95198
+    private function str_replace_assoc(array $replace, $subject) { 
+        return str_replace(array_keys($replace), array_values($replace), $subject);    
     }
 
      private function isAjax() {
@@ -33,21 +36,42 @@ class TTS {
          return !empty($ttsStatus);
      }
 
-    
-    private function parser() {
-        if ($this->tts['lang'] != '' && $this->tts['name'] == 'espeak'){
-            $this->tts['verbosis'] = str_replace('%lang%', $this->tts['lang'], $this->tts['verbosis']);
+    private function loadTechs() {
+        if (file_exists('config.ini')){
+            $iniTechs = parse_ini_file('config.ini', true);
+            if (is_array($iniTechs)){
+                $this->technologies = $iniTechs;
+            } else {
+                $this->technologies = array(
+                    'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
+                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+                );
+            }
+        } else {
+            $this->technologies = array(
+                    'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
+                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+                );
         }
-        $this->tts['verbosis'] = str_replace('%address%', $this->uploadPath['path'] . "{$this->uid}.wav '{$this->text}'", $this->tts['verbosis']);
+        
+    }
+        
+    private function parser() {
+        $replace = array(
+            '%address%' => $this->uploadPath['path'] . "{$this->uid}.wav '{$this->text}'",
+            '%lang%' => $this->tts['lang']
+        );
+
+        $this->tts['verbosis'] = escapeshellcmd($this->str_replace_assoc($replace, $this->tts['verbosis']));
     }
 
-    public function set($request = false) {
+    public function createTTS($request = false) {
         if ($request && is_object($request)){
             if (!$this->isAvailable($request->tts->name))
                  exit("This TTS isn't available in this server");
 
             $this->tts = array( 'name' => (isset($request->tts->name) && $request->tts->name != '') ? $request->tts->name : 'lianetts',
-                                'verbosis' => (isset($request->tts->verbosis) && $request->tts->verbosis != '') ? $request->tts->verbosis : $this->availableTTS[$request->tts->name]['verbosis'] 
+                                'verbosis' => (isset($request->tts->verbosis) && $request->tts->verbosis != '') ? $request->tts->verbosis : $this->technologies[$request->tts->name]['verbosis'] 
             );
              switch($request->tts->name){
                  case 'espeak':
@@ -96,7 +120,7 @@ class TTS {
      }
 
     public function getAvailable() {
-        $availableTTSInServer = $this->array_filter_key($this->availableTTS, array($this, 'isAvailable'));
+        $availableTTSInServer = $this->array_filter_key($this->technologies, array($this, 'isAvailable'));
         if (isset($availableTTSInServer) && is_array($availableTTSInServer)){
             if (is_array($this->tts) && isset($availableTTSInServer[$this->tts['name']])){
                 return $this->tts;

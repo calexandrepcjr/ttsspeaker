@@ -27,7 +27,7 @@
 	    $availableTTS = $tts->getAvailable();
 	    echo '<select name="tts" title="Which TTS technology do you want?">';
 	    foreach($availableTTS as $key => $tech){
-		echo "<option value='{$key}'>{$key}</option>";
+            echo "<option value='{$key}'>{$key}</option>";
 	    }
          echo '</select>';
          ?>
