@@ -2,17 +2,20 @@ function Speaker(parameters) {
     sessionStorage.clear();
     var imported = document.createElement('script');
     //http://www.openjs.com/scripts/jx/
-    imported.src = 'assets/js/jx-3.01a.min.js';
+    if (Speaker.prototype.urlExists('assets/js/jx-3.01a.min.js')){
+      imported.src = 'assets/js/jx-3.01a.min.js';
+    } else {
+      imported.src = '../medvoice/' + 'assets/js/jx-3.01a.min.js';
+    }
     document.head.appendChild(imported);
-
     if (typeof parameters == 'object'){
-	this.binder = (typeof parameters.binder == 'undefined') ? 'load' : parameters.binder;
-	if (typeof parameters.secondaryTarget == 'object') {
+      this.binder = (typeof parameters.binder == 'undefined') ? 'load' : parameters.binder;
+    if (typeof parameters.secondaryTarget == 'object') {
 	    this.target = parameters.secondaryTarget;
-	}
-	
+    }
+
 	if (typeof parameters.target == 'object') {
-	    
+
 	    this.binder = (this.binder == 'load') ? 'change' : this.binder;
 	} else {
 	    this.target = window;
@@ -41,7 +44,7 @@ function Speaker(parameters) {
 		    name: tech,
 		    lang: (typeof parameters.tts.lang != 'undefined') ? parameters.tts.lang : ''
 		}
-	    },         
+	    },
 	     repeat: (typeof parameters.repeat == 'undefined') ? 0 : parameters.repeat, //How many plays do you want (loop)
 	     interval: (typeof parameters.interval == 'undefined') ? 2000 : parameters.interval //ms interval between plays
 	 };
@@ -80,10 +83,10 @@ Speaker.prototype.audioPlay = function(data){
     });
 
     if (!sessionStorage.getItem('audioSession')) {
-	audio.play();
-	sessionStorage.setItem('audioSession', false);
+      audio.play();
+      sessionStorage.setItem('audioSession', false);
     }
-    
+
 }
 
 Speaker.prototype.speak = function(data){
@@ -95,7 +98,7 @@ Speaker.prototype.speak = function(data){
 		repeat: data.repeat,
 		interval: data.interval,
 		uid: response.uid
-	    }; 
+	    };
 	    Speaker.prototype.audioPlay(playData);
 	} else {
 	    if (data.parameters.tts.lang == ''){
@@ -108,3 +111,11 @@ Speaker.prototype.speak = function(data){
 	}
     }, 'json');
 }
+
+Speaker.prototype.urlExists = function(url){
+    var http = new XMLHttpRequest();
+    http.open('HEAD', url, false);
+    http.send();
+    return http.status!=404;
+}
+
