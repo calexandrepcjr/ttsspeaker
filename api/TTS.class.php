@@ -65,16 +65,20 @@ class TTS {
             $shellCommands = parse_ini_file($iniFileLocation, true);
             $totalShellCommands = count($shellCommands['shell']);
             if ($totalShellCommands > 0){
-                if (in_array($verbosis, $shellCommands['shell'])){
-                    exit('Invalid verbosis - Your verbosis contain a dangerous command that can harm your server.');
+                $initialVerbosis = explode(' ', $verbosis);
+                if (in_array($initialVerbosis[0], $shellCommands['shell'])){
+                    echo json_encode('Invalid verbosis - Your verbosis contain a dangerous command that can harm your server.');
+                    exit();
                 } else {
                     return $verbosis;
                 }
             } else {
-                exit('You can\'t run this class without the list of shell commands. Create a .ini file with all linux shell commands that can possibly harm your server');
+                echo json_encode('You can\'t run this class without the list of shell commands. Create a .ini file with all linux shell commands that can possibly harm your server');
+                exit();
             }
         } else {
-            exit('You can\'t run this class without the list of shell commands. Create a .ini file with all linux shell commands that can possibly harm your server');
+            echo json_encode('You can\'t run this class without the list of shell commands. Create a .ini file with all linux shell commands that can possibly harm your server');
+            exit();
         }
     }
 
@@ -89,8 +93,10 @@ class TTS {
 
     public function createTTS($request = false) {
         if ($request && is_object($request)){
-            if (!$this->isAvailable($request->tts->name))
-                exit("This TTS isn't available in this server");
+            if (!$this->isAvailable($request->tts->name)){
+                echo json_encode('This TTS isn\'t available in this server');
+                exit();
+            }
 
             $this->tts = array( 'name' => (isset($request->tts->name) && $request->tts->name != '') ? $request->tts->name : 'lianetts',
                 'verbosis' => (isset($request->tts->verbosis) && $request->tts->verbosis != '') ? $request->tts->verbosis : $this->technologies[$request->tts->name]['verbosis']
@@ -107,22 +113,27 @@ class TTS {
             $this->setText($request->text);
             $this->parser();
         } else {
-            exit('Absence or Invalid parameters');
+            echo json_encode('Absence or Invalid parameters');
+            exit();
         }
     }
 
     public function setPath($path = false) {
-        if ($path)
+        if ($path){
             $this->uploadPath = $path;
-        else
-            exit('Wrong argument');
+        } else {
+            echo json_encode('Wrong argument');
+            exit();
+        }
     }
 
     public function setUID($uid = false) {
-        if ($uid)
+        if ($uid){
             $this->uid = $uid;
-        else
-            exit('Wrong argument');
+        } else {
+            echo json_encode('Wrong argument');
+            exit();
+        }
     }
 
     public function setText($text = null) {
@@ -161,10 +172,12 @@ class TTS {
             } elseif (count($availableTTSInServer) > 0){
                 return $availableTTSInServer;
             } else {
-                exit('Your TTS choice is not available in this server');
+                echo json_encode('Your TTS choice is not available in this server');
+                exit();
             }
         } else {
-            exit('There is not any TTS available in this server');
+            echo json_encode('There is not any TTS available in this server');
+            exit();
         }
     }
 

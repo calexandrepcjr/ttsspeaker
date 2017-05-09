@@ -122,6 +122,7 @@ Speaker.prototype.speak = function(){
     var self = this;
     var path = this.path;
     jx.load(this.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(this.data.parameters)), function(response){
+      console.log(response);
       if (response != null){
         playData = {
           audioAddress: response.address,
