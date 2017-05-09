@@ -7,7 +7,7 @@ class TTS {
     function __construct(){
         $this->loadTechs();
     }
-    
+
     /*Can't use full property of array_filter below 5.6 version ;-;
       Author @h4cc <https://gist.github.com/h4cc>
       https://gist.github.com/h4cc/8e2e3d0f6a8cd9cacde8
@@ -16,29 +16,30 @@ class TTS {
         $matchedKeys = array_filter(array_keys($array), $callback);
         return array_intersect_key($array, array_flip($matchedKeys));
     }
-    
+
     // Author Wes Foster http://php.net/manual/pt_BR/function.str-replace.php#95198
-    private function str_replace_assoc(array $replace, $subject) { 
-        return str_replace(array_keys($replace), array_values($replace), $subject);    
+    private function str_replace_assoc(array $replace, $subject) {
+        return str_replace(array_keys($replace), array_values($replace), $subject);
     }
 
-     private function isAjax() {
-         if ($this->uid) {
-             return true;
-         } else {
-             return false;
-         }
-     }
-    
+    private function isAjax() {
+        if ($this->uid) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private function isAvailable($ttsName = false) {
-         $ttsName = (!$ttsName) ? $this->tts['name'] : $ttsName;
-         $ttsStatus = shell_exec("which $ttsName");
-         return !empty($ttsStatus);
-     }
+        $ttsName = (!$ttsName) ? $this->tts['name'] : $ttsName;
+        $ttsStatus = shell_exec("which $ttsName");
+        return !empty($ttsStatus);
+    }
 
     private function loadTechs() {
-        if (file_exists('config.ini')){
-            $iniTechs = parse_ini_file('config.ini', true);
+        $iniFileLocation = '../config.ini';
+        if (file_exists($iniFileLocation)){
+            $iniTechs = parse_ini_file($iniFileLocation, true);
             if (is_array($iniTechs)){
                 $this->technologies = $iniTechs;
             } else {
@@ -49,41 +50,62 @@ class TTS {
             }
         } else {
             $this->technologies = array(
-                    'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
-                );
+                'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
+                'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+            );
         }
-        
     }
-        
+
+    private function shellSanitizer($verbosis = false) {
+        if (!$verbosis){
+            $verbosis = $this->tts['verbosis'];
+        }
+        $iniFileLocation = 'config/linuxcommands.ini';
+        if ($verbosis && file_exists($iniFileLocation)){
+            $shellCommands = parse_ini_file($iniFileLocation, true);
+            $totalShellCommands = count($shellCommands['shell']);
+            if ($totalShellCommands > 0){
+                if (in_array($verbosis, $shellCommands['shell'])){
+                    exit('Invalid verbosis - Your verbosis contain a dangerous command that can harm your server.');
+                } else {
+                    return $verbosis;
+                }
+            } else {
+                exit('You can\'t run this class without the list of shell commands. Create a .ini file with all linux shell commands that can possibly harm your server');
+            }
+        } else {
+            exit('You can\'t run this class without the list of shell commands. Create a .ini file with all linux shell commands that can possibly harm your server');
+        }
+    }
+
     private function parser() {
         $replace = array(
             '%address%' => $this->uploadPath['path'] . "{$this->uid}.wav '{$this->text}'",
             '%lang%' => $this->tts['lang']
         );
 
-        $this->tts['verbosis'] = escapeshellcmd($this->str_replace_assoc($replace, $this->tts['verbosis']));
+        $this->tts['verbosis'] = escapeshellcmd($this->str_replace_assoc($replace, $this->shellSanitizer()));
     }
 
     public function createTTS($request = false) {
         if ($request && is_object($request)){
             if (!$this->isAvailable($request->tts->name))
-                 exit("This TTS isn't available in this server");
+                exit("This TTS isn't available in this server");
 
             $this->tts = array( 'name' => (isset($request->tts->name) && $request->tts->name != '') ? $request->tts->name : 'lianetts',
-                                'verbosis' => (isset($request->tts->verbosis) && $request->tts->verbosis != '') ? $request->tts->verbosis : $this->technologies[$request->tts->name]['verbosis'] 
+                'verbosis' => (isset($request->tts->verbosis) && $request->tts->verbosis != '') ? $request->tts->verbosis : $this->technologies[$request->tts->name]['verbosis']
             );
-             switch($request->tts->name){
-                 case 'espeak':
-                     if ($request->tts->lang != '') {
-                         $this->tts['lang'] = $request->tts->lang;
-                     } else {
-                         $this->tts['lang'] = 'mb-br4';
-                     }
-                     break;
-             }
-             $this->text = $request->text;
-             $this->parser();
+            switch($request->tts->name){
+            case 'espeak':
+                if ($request->tts->lang != '') {
+                    $this->tts['lang'] = $request->tts->lang;
+                } else {
+                    $this->tts['lang'] = 'mb-br4';
+                }
+                break;
+            }
+            $this->setText($request->text);
+            $this->parser();
         } else {
             exit('Absence or Invalid parameters');
         }
@@ -100,24 +122,36 @@ class TTS {
         if ($uid)
             $this->uid = $uid;
         else
-            exit('Wrong argument');        
+            exit('Wrong argument');
     }
 
-     public function setText($text = null) {
-         if ($text != null)
-             $this->text = $text;
-     }
+    public function setText($text = null) {
+        //In the future, implement full roman to arabic conversion
+        if ($text != null){
+            $replace = array(
+                ' I' => ' 1',
+                ' I ' => ' 1 ',
+                ' II' => ' 2',
+                ' II ' => ' 2 ',
+                'III' => '3',
+                'IV' => '4',
+                ' V' => ' 5',
+                ' V ' => ' 5 '
+            );
+            $this->text = $this->str_replace_assoc($replace, $text);
+        }
+    }
 
     public function get() {
         return $this->getAvailable();
     }
 
-     public function getText() {
-         if ($this->isAjax())
-             echo json_encode(array('text' => $this->text));
-         else
-             return $this->text;
-     }
+    public function getText() {
+        if ($this->isAjax())
+            echo json_encode(array('text' => $this->text));
+        else
+            return $this->text;
+    }
 
     public function getAvailable() {
         $availableTTSInServer = $this->array_filter_key($this->technologies, array($this, 'isAvailable'));

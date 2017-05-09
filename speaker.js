@@ -7,17 +7,22 @@ function Speaker(parameters) {
   } else {
     this.path = '../medvoice/';
   }
+  this.checkDependencies();
+}
+
+Speaker.prototype.checkDependencies = function() {
   if (typeof jx == 'undefined'){
     var imported = document.createElement('script');
-    var self = this;
     imported.type = 'text/javascript';
     imported.src = this.path + 'assets/js/jx-3.01a.min.js';
-    imported.onreadystatechange = function() {
-      if (this.readyState == 'complete') helper();
-    }
-    imported.onload = self.load;
+    imported.addEventListener('load', this.load.bind(this));
     document.head.appendChild(imported);
+  } else {
+    this.load();
   }
+}
+
+Speaker.prototype.load = function(){
   if (typeof this.parameters == 'object'){
     this.binder = (typeof this.parameters.binder == 'undefined') ? 'load' : this.parameters.binder;
     if (typeof this.parameters.secondaryTarget == 'object') {
@@ -30,82 +35,54 @@ function Speaker(parameters) {
       this.target = window;
     }
   }
-  console.log(parameters);
+  if (typeof this.parameters.target == 'undefined' && typeof this.value == 'undefined') {
+    console.log('Invalid target');
+    return false;
+  }
+
   if (this.binder == 'speak'){
-    var tech;
-    if (typeof this.parameters.target == 'undefined' && typeof this.value == 'undefined') {
-      console.log('Invalid target');
-      return false;
-    }
-    if (typeof this.parameters.tts != 'undefined'){
-      switch (typeof this.parameters.tts.name){
-        case 'object':
-          tech = this.parameters.tts.name.value;
-          break;
-        case 'string':
-          tech = this.parameters.tts.name;
-          break;
-        case 'undefined':
-          tech = '';
-      }
-    } else {
-      tech = '';
-    }
-    data = {
-      parameters: {
-        text: (this.binder == 'load' || 'speak') ? this.parameters.target : this.parameters.target.value,
-        tts: {
-          name: tech,
-          lang: (typeof this.parameters.tts != 'undefined' && typeof this.parameters.tts.lang != 'undefined') ? this.parameters.tts.lang : ''
-        }
-      },
-      repeat: (typeof this.parameters.repeat == 'undefined') ? 0 : this.parameters.repeat, //How many plays do you want (loop)
-      interval: (typeof this.parameters.interval == 'undefined') ? 2000 : this.parameters.interval //ms interval between plays
-    };
-    if (!sessionStorage.getItem('audioSession'))
-      this.speak(data);
-    else
-      console.log('Your audio session does not finished yet!');
+    this.loadParameters();
   } else {
+    var self = this;
     this.target.addEventListener(this.binder, function(){
-      var tech;
-      if (typeof this.parameters.target == 'undefined' && typeof this.value == 'undefined') {
-        console.log('Invalid target');
-        return false;
-      }
-      switch (typeof this.parameters.tts.name){
-        case 'object':
-          tech = this.parameters.tts.name.value;
-          break;
-        case 'string':
-          tech = this.parameters.tts.name;
-          break;
-        case 'undefined':
-          tech = '';
-      }
-      data = {
-        parameters: {
-          text: (this.binder == 'load') ? this.parameters.target : this.parameters.target.value,
-          tts: {
-            name: tech,
-            lang: (typeof this.parameters.tts.lang != 'undefined') ? this.parameters.tts.lang : ''
-          }
-        },
-        repeat: (typeof this.parameters.repeat == 'undefined') ? 0 : this.parameters.repeat, //How many plays do you want (loop)
-        interval: (typeof this.parameters.interval == 'undefined') ? 2000 : this.parameters.interval //ms interval between plays
-      };
-      if (!sessionStorage.getItem('audioSession'))
-        this.speak(data);
-      else
-        console.log('Your audio session does not finished yet!');
+      self.loadParameters();
     });
   }
 }
 
-Speaker.prototype.load = function(){
+Speaker.prototype.loadParameters = function() {
+  var tech;
+  if (typeof this.parameters.tts != 'undefined'){
+    switch (typeof this.parameters.tts.name){
+      case 'object':
+        tech = this.parameters.tts.name.value;
+        break;
+      case 'string':
+        tech = this.parameters.tts.name;
+        break;
+      case 'undefined':
+        tech = '';
+    }
+  } else {
+    tech = '';
+  }
+  this.data = {
+    parameters: {
+      text: (typeof this.parameters.target == 'string') ? this.parameters.target : this.parameters.target.value,
+      tts: {
+        name: tech,
+        lang: (typeof this.parameters.tts != 'undefined' && typeof this.parameters.tts.lang != 'undefined') ? this.parameters.tts.lang : ''
+      },
+      path: this.parameters.path
+    },
+    repeat: (typeof this.parameters.repeat == 'undefined') ? 0 : this.parameters.repeat, //How many plays do you want (loop)
+    interval: (typeof this.parameters.interval == 'undefined') ? 2000 : this.parameters.interval, //ms interval between plays
+  };
+
+  this.speak();
 }
 
-Speaker.prototype.audioPlay = function(data){
+Speaker.prototype.audioPlay = function(data) {
   var audio = new Audio(data.audioAddress);
   audio.crossOrigin = 'anonymous';
   audio.addEventListener('ended', function() {
@@ -119,9 +96,9 @@ Speaker.prototype.audioPlay = function(data){
       this.pause();
       parameters = {
         action: 'shutup',
-        uid: data.uid
+        address: data.audioAddress
       };
-      jx.load(this.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(parameters)), function(response){
+      jx.load(data.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(parameters)), function(response){
         if (response == 1) {
           sessionStorage.clear();
           console.log('Audio ended');
@@ -139,27 +116,34 @@ Speaker.prototype.audioPlay = function(data){
 
 }
 
-Speaker.prototype.speak = function(data){
-  data.parameters.action = 'speak';
-  jx.load(this.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(data.parameters)), function(response){
-    if (response != null){
-      playData = {
-        audioAddress: response.address,
-        repeat: data.repeat,
-        interval: data.interval,
-        uid: response.uid
-      };
-      this.audioPlay(playData);
-    } else {
-      if (data.parameters.tts.lang == ''){
-        console.log("API Error: Can't make the audio");
-        return false;
+Speaker.prototype.speak = function(){
+  if (!sessionStorage.getItem('audioSession')){
+    this.data.parameters.action = 'speak';
+    var self = this;
+    var path = this.path;
+    jx.load(this.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(this.data.parameters)), function(response){
+      if (response != null){
+        playData = {
+          audioAddress: response.address,
+          repeat: self.data.repeat,
+          interval: self.data.interval,
+          uid: response.uid,
+          path: path
+        };
+        self.audioPlay(playData);
       } else {
-        console.log("API Error: Inexistent language");
-        return false;
+        if (data.parameters.tts.lang == ''){
+          console.log("API Error: Can't make the audio");
+          return false;
+        } else {
+          console.log("API Error: Inexistent language");
+          return false;
+        }
       }
-    }
-  }, 'json');
+    }, 'json');
+  } else {
+    console.log('Your audio session does not finished yet!');
+  }
 }
 
 Speaker.prototype.urlExists = function(url){

@@ -15,9 +15,10 @@ will be available to use,
 - target = Object or String (The text-to-speech always will come from this object)*;
 - secondaryTarget = Object or String (a seconde reference to trigger the event, like a button);
 - tts = String with the name of existing techs. You can use the PHP API to retrieve the compatible ones (optional - default lianetts) ;
-- binder = You can load other listener types (optional -  - if String will automatically load the audio when the window load, objects will load with change listener attached);
+- binder = You can load other listener types (optional -  - if String will automatically load the audio when the window load, objects will load with change listener attached, but you can change the logic too, its just the default behavior. The binder speak activates the 'free' mode, without listeners: just take the string/object and plays when the js dependancies are loaded (good feature to panels));
 - repeat = How many times do you want play the audio (optional - default 0);
 - interval = Interval between the audio loop (default - in ms - 2000ms);
+- path = An object with two attributes, name and link, referencing respectively to path to voice files and link (URI) to the files;
 
 I'll need to install one of listed technologies into conf.ini or natively code added (lianetts or espeak) and enjoy.
 
