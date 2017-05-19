@@ -1,13 +1,26 @@
 function Speaker(parameters) {
   sessionStorage.clear();
   this.parameters = parameters;
+  var self = this;
   //http://www.openjs.com/scripts/jx/
-  if (this.urlExists('assets/js/jx-3.01a.min.js')){
-    this.path = '';
-  } else {
-    this.path = '../medvoice/';
-  }
-  this.checkDependencies();
+  this.urlExists('assets/js/jx-3.01a.min.js').then(function(exists) {
+    this.baseUrl = [];
+    if (exists){
+      self.path = '';
+    } else {
+      this.pathname = window.location.pathname.split('/');
+      //Normally in the dev environment the project will be inside a path into htdocs dir
+      if (window.location.host == 'localhost'){
+        this.subDirs = this.pathname.length - 3;
+      } else {
+        this.subDirs = this.pathname.length - 2;
+      }
+      this.baseUrl = '../';
+      this.baseUrl = this.baseUrl.repeat(this.subDirs);
+      self.path = this.baseUrl + 'medvoice/';
+    }
+    self.checkDependencies();
+  });
 }
 
 Speaker.prototype.checkDependencies = function() {
@@ -122,7 +135,6 @@ Speaker.prototype.speak = function(){
     var self = this;
     var path = this.path;
     jx.load(this.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(this.data.parameters)), function(response){
-      console.log(response);
       if (response != null){
         playData = {
           audioAddress: response.address,
@@ -147,15 +159,16 @@ Speaker.prototype.speak = function(){
   }
 }
 
-Speaker.prototype.urlExists = function(url){
-  var http = new XMLHttpRequest();
-  http.open('HEAD', url, false);
-  http.onreadystatechange = function(){
-    if(request.readyState==4){
-      return true;
-    }else{
-      return false;
-    }
-  }
+Speaker.prototype.urlExists = function (url){
+  return new Promise(function(resolve) {
+    var http = new XMLHttpRequest();
+    http.open('HEAD', url);
+    http.onreadystatechange = function() {
+      if (http.readyState === 4) {
+        resolve(http.status === 200);
+      }
+    };
+    http.send();
+  });
 }
 
