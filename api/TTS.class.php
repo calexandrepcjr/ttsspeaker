@@ -45,13 +45,15 @@ class TTS {
             } else {
                 $this->technologies = array(
                     'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%'),
+                    'oldespeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
                 );
             }
         } else {
             $this->technologies = array(
                 'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-                'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+                'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%'),
+                'oldespeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
             );
         }
     }
