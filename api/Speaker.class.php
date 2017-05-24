@@ -58,12 +58,13 @@ class Speaker {
 
     public function getSpeak(){
         $currentTTS = $this->tts->get();
-        $return = shell_exec($currentTTS['verbosis']);
+        $verbosis = str_replace("\\", '', $currentTTS['verbosis']);
+        $return = shell_exec($verbosis);
 
         if (file_exists($this->path['path'] . "{$this->uid}.wav")){
             echo json_encode(array('address' => $this->path['link'] . "{$this->uid}.wav", 'uid' => $this->uid));
         } else {
-            echo json_encode($return);
+            echo json_encode(array('message' => 'Audio generation error occurred', 'status' => 500));
         }
     }
 

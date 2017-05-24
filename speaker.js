@@ -10,7 +10,7 @@ function Speaker(parameters) {
     } else {
       this.pathname = window.location.pathname.split('/');
       //Normally in the dev environment the project will be inside a path into htdocs dir
-      if (window.location.host == 'localhost'){
+      if (window.location.host == 'localhost' || window.location.host.indexOf('192.168') != -1){
         this.subDirs = this.pathname.length - 3;
       } else {
         this.subDirs = this.pathname.length - 2;
@@ -136,14 +136,18 @@ Speaker.prototype.speak = function(){
     var path = this.path;
     jx.load(this.path + 'api/speaker.php?parameters=' + encodeURIComponent(JSON.stringify(this.data.parameters)), function(response){
       if (response != null){
-        playData = {
-          audioAddress: response.address,
-          repeat: self.data.repeat,
-          interval: self.data.interval,
-          uid: response.uid,
-          path: path
-        };
-        self.audioPlay(playData);
+        if (typeof response.status != undefined && response.status == 500){
+          console.log(response.message);
+        } else {
+          playData = {
+            audioAddress: response.address,
+            repeat: self.data.repeat,
+            interval: self.data.interval,
+            uid: response.uid,
+            path: path
+          };
+          self.audioPlay(playData);
+        }
       } else {
         if (data.parameters.tts.lang == ''){
           console.log("API Error: Can't make the audio");

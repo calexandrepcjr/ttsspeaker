@@ -33,6 +33,13 @@ class TTS {
     private function isAvailable($ttsName = false) {
         $ttsName = (!$ttsName) ? $this->tts['name'] : $ttsName;
         $ttsStatus = shell_exec("which $ttsName");
+        //Some TTS in the config won't have same name than the verbosis, if fails, try to validate the verbosis
+        if (empty($ttsStatus)){
+            $ttsVerbosis = explode(' ', $this->technologies[$ttsName]['verbosis']);
+            $ttsStatus = shell_exec("which $ttsVerbosis[0]");
+        } else {
+
+        }
         return !empty($ttsStatus);
     }
 
@@ -44,16 +51,16 @@ class TTS {
                 $this->technologies = $iniTechs;
             } else {
                 $this->technologies = array(
-                    'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%'),
-                    'oldespeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+                    'lianetts' => array('verbosis' => 'lianetts -g 1 %address% %text%'),
+                    'espeak' => array('verbosis' => 'espeak -v %lang% -s 100  %text% -w %address%'),
+                    'oldespeak' => array('verbosis' => 'espeak -v %lang% -s 110 %text% -w %address% | mbrola -e /usr/share/mbrola/br4/br4 - %address%')
                 );
             }
         } else {
             $this->technologies = array(
-                'lianetts' => array('verbosis' => 'lianetts -g 1 %address%'),
-                'espeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%'),
-                'oldespeak' => array('verbosis' => 'espeak -v %lang% -s 100 -w %address%')
+                'lianetts' => array('verbosis' => 'lianetts -g 1 %address% %text%'),
+                'espeak' => array('verbosis' => 'espeak -v %lang% -s 100  %text% -w %address%'),
+                'oldespeak' => array('verbosis' => 'espeak -v %lang% -s 110 %text% -w %address% | mbrola -e /usr/share/mbrola/br4/br4 - %address%')
             );
         }
     }
@@ -86,7 +93,8 @@ class TTS {
 
     private function parser() {
         $replace = array(
-            '%address%' => $this->uploadPath['path'] . "{$this->uid}.wav '{$this->text}'",
+            '%address%' => $this->uploadPath['path'] . "{$this->uid}.wav",
+            '%text%' => "'{$this->text}'",
             '%lang%' => $this->tts['lang']
         );
 
@@ -105,6 +113,7 @@ class TTS {
             );
             switch($request->tts->name){
             case 'espeak':
+            case 'oldespeak':
                 if ($request->tts->lang != '') {
                     $this->tts['lang'] = $request->tts->lang;
                 } else {
