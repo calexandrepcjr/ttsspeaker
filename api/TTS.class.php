@@ -8,6 +8,7 @@ class TTS {
     const LINKPATH = 'mediapool/';
     function __construct(){
         $this->loadTechs();
+        $this->setPath();
     }
 
     public function createTTS($request = false) {
@@ -41,9 +42,8 @@ class TTS {
     public function setPath($path = false) {
         if ($path){
             $this->uploadPath = $path;
-        } else {
-            echo json_encode('Wrong argument');
-            exit();
+        } else if(!isset($this->uploadPath)) {
+            $this->uploadPath = array('path' => self::PATH, 'link' => self::LINKPATH);
         }
     }
 
