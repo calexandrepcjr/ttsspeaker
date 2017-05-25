@@ -5,8 +5,6 @@ class Speaker {
     private $tts;
     private $uid;
     private $path;
-    const PATH = '../mediapool/';
-    const LINKPATH = 'mediapool/';
 
     function __construct($request = false){
         if ($request){
@@ -16,8 +14,12 @@ class Speaker {
             if ($this->action == 'speak'){
                 $this->tts = new TTS();
                 $this->tts->setUID($this->uid);
-                $this->path = (isset($requestParameters->path)) ? array('path' => $requestParameters->path->name, 'link' => $requestParameters->path->link) : array('path' => self::PATH, 'link' => self::LINKPATH);
-                $this->tts->setPath($this->path);
+                if (isset($requestParameters->path)){
+                    $this->path = array('path' => $requestParameters->path->name, 'link' => $requestParameters->path->link);
+                    $this->tts->setPath($this->path);
+                } else {
+                    $this->path = $this->tts->getPath();
+                }
                 $this->checkPath();
                 $this->tts->createTTS($requestParameters);
             } else {
@@ -41,8 +43,8 @@ class Speaker {
             $this->path = explode('/', $this->path);
             $lastElementPath = count($this->path) - 1;
             $audioFilename = $this->path[$lastElementPath];
-            exec("rm -f " . self::PATH . $audioFilename);
-            if (!file_exists(self::PATH . $audioFilename))
+            exec("rm -f " . $this->path['path'] . $audioFilename);
+            if (!file_exists($this->path['path'] . $audioFilename))
                 echo json_encode(1);
             else
                 echo json_encode(0);
@@ -57,15 +59,7 @@ class Speaker {
     }
 
     public function getSpeak(){
-        $currentTTS = $this->tts->get();
-        $verbosis = str_replace("\\", '', $currentTTS['verbosis']);
-        $return = shell_exec($verbosis);
-
-        if (file_exists($this->path['path'] . "{$this->uid}.wav")){
-            echo json_encode(array('address' => $this->path['link'] . "{$this->uid}.wav", 'uid' => $this->uid));
-        } else {
-            echo json_encode(array('message' => 'Audio generation error occurred', 'status' => 500));
-        }
+        $this->tts->getAudioSource();
     }
 
     public function removeSpeak(){
