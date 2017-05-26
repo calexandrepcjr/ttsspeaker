@@ -9,15 +9,12 @@ function Speaker(parameters) {
       self.path = '';
     } else {
       this.pathname = window.location.pathname.split('/');
+      var host = window.location.origin + '/';
       //Normally in the dev environment the project will be inside a path into htdocs dir
       if (window.location.host == 'localhost' || window.location.host.indexOf('192.168') != -1){
-        this.subDirs = this.pathname.length - 3;
-      } else {
-        this.subDirs = this.pathname.length - 2;
+        host += this.pathname[1];
       }
-      this.baseUrl = '../';
-      this.baseUrl = this.baseUrl.repeat(this.subDirs);
-      self.path = this.baseUrl + 'medvoice/';
+      self.path = host + '/medvoice/';
     }
     self.checkDependencies();
   });
